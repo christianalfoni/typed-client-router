@@ -1,7 +1,7 @@
 {
-  "name": "workspace",
+  "name": "typed-client-router",
   "version": "0.1.0",
-  "description": "",
+  "description": "A typed client router",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "dependencies": {
