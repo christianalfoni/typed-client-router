@@ -18,26 +18,30 @@ const router = createRouter({
     items: '/items',
     item: '/items/:id',
     creative: '/creative/*something'
+}, {
+    // Optionally provide a base path
+    base: '/some-base'
 })
 
-// A map of the active routes
-router.activeRoutes
+// The current route can be undefined, which means
+// it is a NotFound
+if (!router.current) {}
 
-// Check if a route is active
-if (router.activeRoutes.items) {
-    // Check if nested route is active
-    if (router.activeRoutes.item) {
-        // Get access to params (They are typed)
-        router.activeRoutes.item.params.id
-    }
+// Check which route is active
+if (router.current.name === 'main') {}
+
+// Each route is defined in isolation. Nested behaviour is determined by your implementation
+if (router.current.name === 'items' || router.current.name === 'item') {}
+
+if (router.current.name === 'item') {
+    // Typed params
+    router.current.params.id
 }
 
-if (router.activeRoutes.creative) {
-    // Splat holds the rest of the url on params
-    router.activeRoutes.creative.params.something
+if (router.current.name === 'creative') {
+    // Splat params holds the rest of the path
+    router.current.params.something    
 }
-
-// Exhaust all routes to determine "Not Found"
 
 // Access queries
 router.queries
@@ -49,7 +53,7 @@ router.setQuery("foo", "bar")
 router.setQuery("foo", undefined)
 
 // Listen to changes
-const disposer = router.listen((activeRoutes) => {
+const disposer = router.listen((currentRoute) => {
 
 })
 
@@ -60,4 +64,7 @@ router.push('item', { id: '123' })
 
 // Replace page
 router.replace('item', { id: '456' })
+
+// Create a url string
+router.url('item', { id: '456' })
 ```
