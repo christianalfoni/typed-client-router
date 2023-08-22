@@ -23,21 +23,24 @@ type Route<K extends string, T extends string> = {
   params: ExctractParams<T>;
 };
 
-export function createRouter<
-  const T extends Record<string, string>,
-  A = {
-    [K in keyof T]?: K extends string ? Route<K, T[K]> : never;
-  }
->(config: T) {
+export function createRouter<const T extends Record<string, string>>(
+  config: T,
+  {
+    base,
+  }: {
+    base?: `/${string}`;
+  } = {}
+) {
   const routes: ExtractRoutes<T>[] = [];
   const history = createBrowserHistory();
 
   for (const route in config) {
+    const configWithBase = base ? base + config[route] : config[route];
     // @ts-ignore
     routes.push({
       name: route,
-      config: config[route],
-      path: new Path(config[route]),
+      config: configWithBase,
+      path: new Path(configWithBase),
       get params() {
         return this.path.test(history.location.pathname) || {};
       },
@@ -54,27 +57,13 @@ export function createRouter<
     return route;
   }
 
-  function getActiveRoutes() {
-    return routes.filter((route) =>
-      // The "/" route never matches a partial test, just does not make sense
-      Boolean(
-        route.config.length > 1
-          ? route.path.partialTest(history.location.pathname)
-          : route.path.test(history.location.pathname)
-      )
-    );
+  function getActiveRoute() {
+    return routes.find((route) => route.path.test(history.location.pathname));
   }
 
-  function getActiveRoutesMap() {
-    return getActiveRoutes().reduce((aggr, route) => {
-      // @ts-ignore
-      aggr[route.name as keyof T] = route;
-
-      return aggr;
-    }, {} as A);
-  }
-
-  const listeners = new Set<(activeRoutes: A) => void>();
+  const listeners = new Set<
+    (currentRoute: ExtractRoutes<T> | undefined) => void
+  >();
 
   function notify(update: Update) {
     if (
@@ -84,14 +73,23 @@ export function createRouter<
     ) {
       return;
     }
-    const activeRoutes = getActiveRoutesMap();
 
-    listeners.forEach((listener) => listener(activeRoutes));
+    const activeRoute = getActiveRoute();
+
+    listeners.forEach((listener) => listener(activeRoute));
   }
 
   history.listen(notify);
 
   return {
+    url<K extends keyof T>(
+      name: K,
+      params: K extends string ? Route<K, T[K]>["params"] : never
+    ) {
+      const route = getRoute(name);
+
+      return route.path.build(params);
+    },
     push<K extends keyof T>(
       name: K,
       params: K extends string ? Route<K, T[K]>["params"] : never
@@ -130,15 +128,15 @@ export function createRouter<
         }
       );
     },
-    listen(listener: (activeRoutes: A) => void) {
+    listen(listener: (currentRoute: ExtractRoutes<T> | undefined) => void) {
       listeners.add(listener);
 
       return () => {
         listeners.delete(listener);
       };
     },
-    get activeRoutes() {
-      return getActiveRoutesMap();
+    get current() {
+      return getActiveRoute();
     },
     get queries() {
       return queryString.parse(history.location.search);
