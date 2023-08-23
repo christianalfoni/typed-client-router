@@ -19,7 +19,7 @@ export type Route<K extends string, T extends string> = {
   params: ExctractParams<T>;
 };
 
-type TRoutes<T extends RoutesConfig> = {
+export type TRoutes<T extends RoutesConfig> = {
   [K in keyof T]: K extends string ? Route<K, T[K]> : never;
 }[keyof T];
 
