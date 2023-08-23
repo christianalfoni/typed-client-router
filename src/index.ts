@@ -99,7 +99,10 @@ export function createRouter<const T extends Routes>(
 
     const activeRoute = getActiveRoute();
 
-    listeners.forEach((listener) => listener(activeRoute));
+    listeners.forEach((listener) =>
+      // We change reference as the route is considered new
+      listener(activeRoute ? { ...activeRoute } : undefined)
+    );
   }
 
   history.listen(notify);
