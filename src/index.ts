@@ -157,11 +157,3 @@ export function createRouter<const T extends Routes>(
     },
   };
 }
-
-const routes = {
-  main: '/'
-} as const
-
-type MyRouter = Router<typeof routes>
-
-const test = createRouter()
