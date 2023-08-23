@@ -10,8 +10,10 @@ Changes are PATH changes, not query changes. This router does not treat your que
 
 ## API
 
+> ⚠️ This router does **NOT** affect your anchor tags. That means you can not expect anchor tags with just an href to automagically work. It can be a good idea to create your own abstraction around these elements, see below
+
 ```ts
-import { createRouter, Router } from 'typed-client-router'
+import { createRouter, TRoutes, TRouter } from 'typed-client-router'
 
 const router = createRouter({
     main: '/',
@@ -72,5 +74,38 @@ router.url('item', { id: '456' })
 // as a "const" type
 const routes = { main: '/' } as const
 
-type MyRouter = Router<typeof routes>
+type MyRoutes = TRoutes<typeof routes>
+type MyRouter = TRouter<typeof routes>
+```
+
+## Anchor tags
+
+To handle anchor tags with href attributes it is adviced to create your own abstraction on top, like many other framework specific routers does. Here is an example with React:
+
+```tsx
+import { Routes, Router, createRouter } from 'typed-client-router'
+
+const routes = {
+    main: '/',
+    item: '/items/:id'
+} as const
+
+type Routes = TRoutes<typeof routes>
+
+type Router = TRouter<typeof routes>
+
+export const router = createRouter(routes)
+
+export function Link({ name, params }: Routes & { children: React.ReactNode }) {
+    return (
+        <a
+            href={router.url(name, params)}
+            onClick={(event) => {
+                event.preventDefault()
+                router.push(name, params)
+            }}>
+                {children}
+        </a>
+    )
+}
 ```

@@ -12,20 +12,18 @@ type ExctractParams<Path> = Path extends `${infer Segment}/${infer Rest}`
   ? ExtractParam<Segment, ExctractParams<Rest>>
   : ExtractParam<Path, {}>;
 
-type ExtractRoutes<T extends Record<string, string>> = {
-  [K in keyof T]: K extends string ? Route<K, T[K]> : never;
-}[keyof T];
+export type RoutesConfig = Record<string, `/${string}`>;
 
-type Route<K extends string, T extends string> = {
+export type Route<K extends string, T extends string> = {
   name: K;
-  config: T;
-  path: Path;
   params: ExctractParams<T>;
 };
 
-export type Routes = Record<string, `/${string}`>;
+type TRoutes<T extends RoutesConfig> = {
+  [K in keyof T]: K extends string ? Route<K, T[K]> : never;
+}[keyof T];
 
-export type Router<T extends Routes> = {
+export type TRouter<T extends RoutesConfig> = {
   url<K extends keyof T>(
     name: K,
     params: K extends string ? Route<K, T[K]>["params"] : never
@@ -39,31 +37,31 @@ export type Router<T extends Routes> = {
     params: K extends string ? Route<K, T[K]>["params"] : never
   ): void;
   setQuery(key: string, value: string | undefined): void;
-  listen(
-    listener: (currentRoute: ExtractRoutes<T> | undefined) => void
-  ): () => void;
-  current: ExtractRoutes<T> | undefined;
+  listen(listener: (currentRoute: TRoutes<T> | undefined) => void): () => void;
+  current: TRoutes<T> | undefined;
   queries: ParsedQuery;
 };
 
-export function createRouter<const T extends Routes>(
+export function createRouter<const T extends RoutesConfig>(
   config: T,
   {
     base,
   }: {
     base?: `/${string}`;
   } = {}
-): Router<T> {
-  const routes: ExtractRoutes<T>[] = [];
+): TRouter<T> {
+  const routes: Array<
+    TRoutes<T> & {
+      path: Path;
+    }
+  > = [];
   const history = createBrowserHistory();
 
   for (const route in config) {
-    const configWithBase = base ? base + config[route] : config[route];
     // @ts-ignore
     routes.push({
       name: route,
-      config: configWithBase,
-      path: new Path(configWithBase),
+      path: new Path(base ? base + config[route] : config[route]),
       get params() {
         return this.path.test(history.location.pathname) || {};
       },
@@ -84,9 +82,7 @@ export function createRouter<const T extends Routes>(
     return routes.find((route) => route.path.test(history.location.pathname));
   }
 
-  const listeners = new Set<
-    (currentRoute: ExtractRoutes<T> | undefined) => void
-  >();
+  const listeners = new Set<(currentRoute: TRoutes<T> | undefined) => void>();
 
   function notify(update: Update) {
     if (
