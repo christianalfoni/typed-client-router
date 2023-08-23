@@ -83,7 +83,7 @@ type MyRouter = TRouter<typeof routes>
 To handle anchor tags with href attributes it is adviced to create your own abstraction on top, like many other framework specific routers does. Here is an example with React:
 
 ```tsx
-import { Routes, Router, createRouter } from 'typed-client-router'
+import { TRoutes, TRouter, createRouter } from 'typed-client-router'
 
 const routes = {
     main: '/',
