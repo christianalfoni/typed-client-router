@@ -1,6 +1,6 @@
 import { Action, Update, createBrowserHistory } from "history";
 import { Path } from "path-parser";
-import queryString from "query-string";
+import queryString, { ParsedQuery } from "query-string";
 
 type ExtractParam<Path, NextPart> = Path extends
   | `:${infer Param}`
@@ -23,14 +23,37 @@ type Route<K extends string, T extends string> = {
   params: ExctractParams<T>;
 };
 
-export function createRouter<const T extends Record<string, string>>(
+export type Routes = Record<string, `/${string}`>;
+
+export type Router<T extends Routes> = {
+  url<K extends keyof T>(
+    name: K,
+    params: K extends string ? Route<K, T[K]>["params"] : never
+  ): string;
+  push<K extends keyof T>(
+    name: K,
+    params: K extends string ? Route<K, T[K]>["params"] : never
+  ): void;
+  replace<K extends keyof T>(
+    name: K,
+    params: K extends string ? Route<K, T[K]>["params"] : never
+  ): void;
+  setQuery(key: string, value: string | undefined): void;
+  listen(
+    listener: (currentRoute: ExtractRoutes<T> | undefined) => void
+  ): () => void;
+  current: ExtractRoutes<T> | undefined;
+  queries: ParsedQuery;
+};
+
+export function createRouter<const T extends Routes>(
   config: T,
   {
     base,
   }: {
     base?: `/${string}`;
   } = {}
-) {
+): Router<T> {
   const routes: ExtractRoutes<T>[] = [];
   const history = createBrowserHistory();
 
@@ -82,31 +105,22 @@ export function createRouter<const T extends Record<string, string>>(
   history.listen(notify);
 
   return {
-    url<K extends keyof T>(
-      name: K,
-      params: K extends string ? Route<K, T[K]>["params"] : never
-    ) {
+    url(name, params) {
       const route = getRoute(name);
 
       return route.path.build(params);
     },
-    push<K extends keyof T>(
-      name: K,
-      params: K extends string ? Route<K, T[K]>["params"] : never
-    ) {
+    push(name, params) {
       const route = getRoute(name);
 
       history.push(route.path.build(params));
     },
-    replace<K extends keyof T>(
-      name: K,
-      params: K extends string ? Route<K, T[K]>["params"] : never
-    ) {
+    replace(name, params) {
       const route = getRoute(name);
 
       history.replace(route.path.build(params));
     },
-    setQuery(key: string, value: string | undefined) {
+    setQuery(key, value) {
       let existingQuery = queryString.parse(history.location.search);
 
       if (value === undefined) {
@@ -128,7 +142,7 @@ export function createRouter<const T extends Record<string, string>>(
         }
       );
     },
-    listen(listener: (currentRoute: ExtractRoutes<T> | undefined) => void) {
+    listen(listener) {
       listeners.add(listener);
 
       return () => {
@@ -143,3 +157,11 @@ export function createRouter<const T extends Record<string, string>>(
     },
   };
 }
+
+const routes = {
+  main: '/'
+} as const
+
+type MyRouter = Router<typeof routes>
+
+const test = createRouter()

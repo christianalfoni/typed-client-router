@@ -11,7 +11,7 @@ Changes are PATH changes, not query changes. This router does not treat your que
 ## API
 
 ```ts
-import { createRouter } from 'typed-client-router'
+import { createRouter, Router } from 'typed-client-router'
 
 const router = createRouter({
     main: '/',
@@ -67,4 +67,10 @@ router.replace('item', { id: '456' })
 
 // Create a url string
 router.url('item', { id: '456' })
+
+// To extract the type for your router, define the routes
+// as a "const" type
+const routes = { main: '/' } as const
+
+type MyRouter = Router<typeof routes>
 ```
