@@ -63,9 +63,13 @@ const disposer = router.listen((currentRoute) => {
 router.push('main', {})
 // With typed params
 router.push('item', { id: '123' })
+// With queries
+router.push('item', { id: '123' }, { foo: 'bar' })
 
 // Replace page
 router.replace('item', { id: '456' })
+// Replace with query
+router.replace('item', { id: '456' }, { foo: 'bar' })
 
 // Create a url string
 router.url('item', { id: '456' })
