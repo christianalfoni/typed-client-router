@@ -26,15 +26,17 @@ export type TRoutes<T extends RoutesConfig> = {
 export type TRouter<T extends RoutesConfig> = {
   url<K extends keyof T>(
     name: K,
-    params: K extends string ? Route<K, T[K]>["params"] : never
+    params: K extends string ? Route<K, T[K]>["params"] : never,
   ): string;
   push<K extends keyof T>(
     name: K,
-    params: K extends string ? Route<K, T[K]>["params"] : never
+    params: K extends string ? Route<K, T[K]>["params"] : never,
+    query?: Record<string, string>,
   ): void;
   replace<K extends keyof T>(
     name: K,
-    params: K extends string ? Route<K, T[K]>["params"] : never
+    params: K extends string ? Route<K, T[K]>["params"] : never,
+    query?: Record<string, string>,
   ): void;
   setQuery(key: string, value: string | undefined): void;
   listen(listener: (currentRoute: TRoutes<T> | undefined) => void): () => void;
@@ -48,7 +50,7 @@ export function createRouter<const T extends RoutesConfig>(
     base,
   }: {
     base?: `/${string}`;
-  } = {}
+  } = {},
 ): TRouter<T> {
   const routes: Array<
     TRoutes<T> & {
@@ -97,7 +99,7 @@ export function createRouter<const T extends RoutesConfig>(
 
     listeners.forEach((listener) =>
       // We change reference as the route is considered new
-      listener(activeRoute ? { ...activeRoute } : undefined)
+      listener(activeRoute ? { ...activeRoute } : undefined),
     );
   }
 
@@ -109,15 +111,21 @@ export function createRouter<const T extends RoutesConfig>(
 
       return route.path.build(params);
     },
-    push(name, params) {
+    push(name, params, query = {}) {
       const route = getRoute(name);
 
-      history.push(route.path.build(params));
+      history.push({
+        pathname: route.path.build(params),
+        search: queryString.stringify(query),
+      });
     },
-    replace(name, params) {
+    replace(name, params, query = {}) {
       const route = getRoute(name);
 
-      history.replace(route.path.build(params));
+      history.replace({
+        pathname: route.path.build(params),
+        search: queryString.stringify(query),
+      });
     },
     setQuery(key, value) {
       let existingQuery = queryString.parse(history.location.search);
@@ -138,7 +146,7 @@ export function createRouter<const T extends RoutesConfig>(
         },
         {
           isQueryUpdate: true,
-        }
+        },
       );
     },
     listen(listener) {
