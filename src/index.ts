@@ -17,6 +17,7 @@ export type RoutesConfig = Record<string, `/${string}`>;
 export type Route<K extends string, T extends string> = {
   name: K;
   params: ExctractParams<T>;
+  pathname: string;
 };
 
 export type TRoutes<T extends RoutesConfig> = {
@@ -42,6 +43,7 @@ export type TRouter<T extends RoutesConfig> = {
   listen(listener: (currentRoute: TRoutes<T> | undefined) => void): () => void;
   current: TRoutes<T> | undefined;
   queries: ParsedQuery;
+  pathname: string;
 };
 
 export function createRouter<const T extends RoutesConfig>(
@@ -66,6 +68,9 @@ export function createRouter<const T extends RoutesConfig>(
       path: new Path(base ? base + config[route] : config[route]),
       get params() {
         return this.path.test(history.location.pathname) || {};
+      },
+      get pathname() {
+        return history.location.pathname.substring(base?.length ?? 0);
       },
     });
   }
@@ -161,6 +166,9 @@ export function createRouter<const T extends RoutesConfig>(
     },
     get queries() {
       return queryString.parse(history.location.search);
+    },
+    get pathname() {
+      return history.location.pathname.substring(base?.length ?? 0);
     },
   };
 }
