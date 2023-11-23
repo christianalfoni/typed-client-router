@@ -51,7 +51,7 @@ export function createRouter<const T extends RoutesConfig>(
   {
     base,
   }: {
-    base?: `/${string}`;
+    base?: string;
   } = {},
 ): TRouter<T> {
   const routes: Array<
@@ -60,6 +60,12 @@ export function createRouter<const T extends RoutesConfig>(
     }
   > = [];
   const history = createBrowserHistory();
+
+  if (base === "/") {
+    base = "";
+  } else if (base && base[0] !== "/") {
+    base = "/" + base;
+  }
 
   for (const route in config) {
     // @ts-ignore
