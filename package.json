@@ -1,6 +1,6 @@
 {
   "name": "typed-client-router",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "description": "A typed client router",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
