@@ -1,6 +1,6 @@
 import { Action, Update, createBrowserHistory } from "history";
 import { Path } from "path-parser";
-import queryString, { ParsedQuery } from "query-string";
+import queryString from "query-string";
 
 type ExtractParam<Path, NextPart> = Path extends
   | `:${infer Param}`
@@ -42,7 +42,7 @@ export type TRouter<T extends RoutesConfig> = {
   setQuery(key: string, value: string | undefined): void;
   listen(listener: (currentRoute: TRoutes<T> | undefined) => void): () => void;
   current: TRoutes<T> | undefined;
-  queries: ParsedQuery;
+  queries: Record<string, string>;
   pathname: string;
 };
 
@@ -171,7 +171,10 @@ export function createRouter<const T extends RoutesConfig>(
       return getActiveRoute();
     },
     get queries() {
-      return queryString.parse(history.location.search);
+      return queryString.parse(history.location.search) as Record<
+        string,
+        string
+      >;
     },
     get pathname() {
       return history.location.pathname.substring(base?.length ?? 0);
