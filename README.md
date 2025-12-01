@@ -68,20 +68,24 @@ const disposer = router.listen((currentRoute) => {
 
 // Push new page
 router.push('main')
-// With typed params
+// With typed params and queries combined
 router.push('item', { id: '123' })
 // With typed queries (page and sort are type-checked for 'items' route)
-router.push('items', {}, { page: '1', sort: 'name' })
+router.push('items', { page: '1', sort: 'name' })
 // With partial queries (each query param is individually optional)
-router.push('items', {}, { page: '1' })
+router.push('items', { page: '1' })
+// With both params and queries in a single object
+router.push('userPosts', { userId: '123', page: '1' })
 
 // Replace page
 router.replace('item', { id: '456' })
 // Replace with typed queries
-router.replace('items', {}, { page: '2', sort: 'date' })
+router.replace('items', { page: '2', sort: 'date' })
 
 // Create a url string
 router.url('item', { id: '456' })
+// With both params and queries
+router.url('userPosts', { userId: '123', page: '1' })
 
 // To extract the type for your router, define the routes
 // as a "const" type
@@ -108,10 +112,11 @@ if (router.current?.name === 'items') {
 }
 
 // When pushing, query parameters are type-checked
-router.push('items', {}, { page: '1', sort: 'asc' })
+// Params and queries are combined in a single object
+router.push('items', { page: '1', sort: 'asc' })
 
 // Routes without defined queries accept any string queries
-router.push('search', {}, { q: 'test', filter: 'latest' })
+router.push('search', { q: 'test', filter: 'latest' })
 ```
 
 ## Anchor tags

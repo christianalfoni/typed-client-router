@@ -44,9 +44,9 @@ describe('typed-client-router', () => {
       } as const)
 
       // Should not throw
-      router.push('items', {}, { page: '1' })
-      router.push('items', {}, { sort: 'asc' })
-      router.push('items', {}, { page: '1', sort: 'asc' })
+      router.push('items', { page: '1' })
+      router.push('items', { sort: 'asc' })
+      router.push('items', { page: '1', sort: 'asc' })
       router.push('items', {})
 
       expect(true).toBe(true) // If we got here, types are correct
@@ -73,7 +73,7 @@ describe('typed-client-router', () => {
       } as const)
 
       // Should not throw - string routes accept any queries
-      router.push('search', {}, { q: 'test', custom: 'param' })
+      router.push('search', { q: 'test', custom: 'param' })
 
       expect(true).toBe(true)
     })
@@ -108,7 +108,7 @@ describe('typed-client-router', () => {
         items: '/items?page&sort',
       } as const)
 
-      router.push('items', {}, { page: '2', sort: 'desc' })
+      router.push('items', { page: '2', sort: 'desc' })
 
       if (router.current?.name === 'items') {
         expect(router.current.queries.page).toBe('2')
@@ -231,6 +231,44 @@ describe('typed-client-router', () => {
       const url = router.url('items', {})
       expect(url).toBe('/app/items')
     })
+
+    it('should generate URL with query string', () => {
+      const router = createRouter({
+        items: '/items?page&sort',
+      } as const)
+
+      const url = router.url('items', { page: '1', sort: 'asc' })
+      expect(url).toBe('/items?page=1&sort=asc')
+    })
+
+    it('should generate URL with partial query string', () => {
+      const router = createRouter({
+        items: '/items?page&sort',
+      } as const)
+
+      const url = router.url('items', { page: '2' })
+      expect(url).toBe('/items?page=2')
+    })
+
+    it('should generate URL with params and query string', () => {
+      const router = createRouter({
+        userPosts: '/users/:userId/posts?page&filter',
+      } as const)
+
+      const url = router.url('userPosts', { userId: '123', page: '1', filter: 'recent' })
+      expect(url).toMatch(/\/users\/123\/posts\?/)
+      expect(url).toContain('page=1')
+      expect(url).toContain('filter=recent')
+    })
+
+    it('should generate URL with params and partial query string', () => {
+      const router = createRouter({
+        userPosts: '/users/:userId/posts?page&filter',
+      } as const)
+
+      const url = router.url('userPosts', { userId: 'abc', page: '5' })
+      expect(url).toBe('/users/abc/posts?page=5')
+    })
   })
 
   describe('Current Route', () => {
@@ -294,7 +332,7 @@ describe('typed-client-router', () => {
         item: '/items/:id',
       } as const)
 
-      router.push('items', {}, { page: '1' })
+      router.push('items', { page: '1' })
       expect(router.current?.name).toBe('items')
       if (router.current?.name === 'items') {
         expect(router.current.queries.page).toBe('1')
@@ -407,7 +445,7 @@ describe('typed-client-router', () => {
         userPosts: '/users/:userId/posts?page&filter',
       } as const)
 
-      router.push('userPosts', { userId: '123' }, { page: '2', filter: 'recent' })
+      router.push('userPosts', { userId: '123', page: '2', filter: 'recent' })
 
       expect(router.current?.name).toBe('userPosts')
       expect(router.current?.params.userId).toBe('123')

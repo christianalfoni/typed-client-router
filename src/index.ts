@@ -37,20 +37,44 @@ export type TRoutes<T extends RoutesConfig> = {
 
 type RequireParams<P> = keyof P extends never ? false : true;
 
+type MergeParamsAndQueries<
+  P extends Record<string, any>,
+  Q extends Record<string, any>
+> = P & Partial<Q>;
+
+type ParamsType<K extends string, T extends string> = RequireParams<
+  Route<K, T>["params"]
+> extends true
+  ? Route<K, T>["params"]
+  : Partial<Route<K, T>["params"]>;
+
 export type TRouter<T extends RoutesConfig> = {
   url<K extends keyof T>(
     name: K,
-    params: K extends string ? (RequireParams<Route<K, T[K]>["params"]> extends true ? Route<K, T[K]>["params"] : Route<K, T[K]>["params"]) : never,
+    params: K extends string
+      ? MergeParamsAndQueries<
+        ParamsType<K, T[K]>,
+        Route<K, T[K]>["queries"]
+      >
+      : never,
   ): string;
   push<K extends keyof T>(
     name: K,
-    params?: K extends string ? (RequireParams<Route<K, T[K]>["params"]> extends true ? Route<K, T[K]>["params"] : Route<K, T[K]>["params"]) : never,
-    query?: K extends string ? Partial<Route<K, T[K]>["queries"]> : Record<string, string>,
+    params?: K extends string
+      ? MergeParamsAndQueries<
+        ParamsType<K, T[K]>,
+        Route<K, T[K]>["queries"]
+      >
+      : never,
   ): void;
   replace<K extends keyof T>(
     name: K,
-    params?: K extends string ? (RequireParams<Route<K, T[K]>["params"]> extends true ? Route<K, T[K]>["params"] : Route<K, T[K]>["params"]) : never,
-    query?: K extends string ? Partial<Route<K, T[K]>["queries"]> : Record<string, string>,
+    params?: K extends string
+      ? MergeParamsAndQueries<
+        ParamsType<K, T[K]>,
+        Route<K, T[K]>["queries"]
+      >
+      : never,
   ): void;
   setQuery(key: string, value: string | undefined): void;
   listen(listener: (currentRoute: TRoutes<T> | undefined) => void): () => void;
@@ -117,6 +141,27 @@ export function createRouter<const T extends RoutesConfig>(
     return routes.find((route) => route.path.test(history.location.pathname));
   }
 
+  function splitParams(
+    route: (typeof routes)[0],
+    params: Record<string, any> | undefined
+  ) {
+    const pathParamNames = new Set(route.path.params);
+    const pathParams: Record<string, string> = {};
+    const queryParams: Record<string, string> = {};
+
+    Object.entries(params || {}).forEach(([key, value]) => {
+      if (value !== undefined) {
+        if (pathParamNames.has(key)) {
+          pathParams[key] = value as string;
+        } else {
+          queryParams[key] = value as string;
+        }
+      }
+    });
+
+    return { pathParams, queryParams };
+  }
+
   const listeners = new Set<(currentRoute: TRoutes<T> | undefined) => void>();
 
   function notify(update: Update) {
@@ -141,23 +186,29 @@ export function createRouter<const T extends RoutesConfig>(
   return {
     url(name, params) {
       const route = getRoute(name);
+      const { pathParams, queryParams } = splitParams(route, params);
 
-      return route.path.build(params);
+      const pathname = route.path.build(pathParams);
+      const search = queryString.stringify(queryParams);
+
+      return search ? `${pathname}?${search}` : pathname;
     },
-    push(name, params, query) {
+    push(name, params) {
       const route = getRoute(name);
+      const { pathParams, queryParams } = splitParams(route, params);
 
       history.push({
-        pathname: route.path.build(params),
-        search: queryString.stringify(query || {}),
+        pathname: route.path.build(pathParams),
+        search: queryString.stringify(queryParams),
       });
     },
-    replace(name, params, query) {
+    replace(name, params) {
       const route = getRoute(name);
+      const { pathParams, queryParams } = splitParams(route, params);
 
       history.replace({
-        pathname: route.path.build(params),
-        search: queryString.stringify(query || {}),
+        pathname: route.path.build(pathParams),
+        search: queryString.stringify(queryParams),
       });
     },
     setQuery(key, value) {
